@@ -1,7 +1,7 @@
 import streamlit as st
 from loguru import logger
 from langchain.chains import ConversationalRetrievalChain
-from langchain.chat_models import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 
 def main():
