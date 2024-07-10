@@ -31,8 +31,12 @@ def main():
             st.info("Please add your OpenAI API key to continue.")
             st.stop()
         
-        st.session_state.conversation = get_conversation_chain(openai_api_key, model_name)
-        st.session_state.processComplete = True
+        try:
+            st.session_state.conversation = get_conversation_chain(openai_api_key, model_name)
+            st.session_state.processComplete = True
+        except Exception as e:
+            st.error(f"Failed to initialize conversation chain: {e}")
+            st.session_state.processComplete = False
 
     if 'messages' not in st.session_state:
         st.session_state['messages'] = [{"role": "assistant", "content": "안녕하세요! 무엇을 도와드릴까요? 😊"}]
@@ -48,29 +52,39 @@ def main():
         with st.chat_message("user"):
             st.markdown(query)
 
-        with st.chat_message("assistant"):
-            chain = st.session_state.conversation
+        if st.session_state.conversation is not None:
+            with st.chat_message("assistant"):
+                chain = st.session_state.conversation
 
-            with st.spinner("Thinking..."):
-                result = chain({"question": query})
-                response = result['answer']
-                
-                st.markdown(response)
+                with st.spinner("Thinking..."):
+                    try:
+                        result = chain({"question": query})
+                        response = result['answer']
+                        st.markdown(response)
+                    except Exception as e:
+                        st.error(f"Failed to get response: {e}")
+                        response = "죄송합니다. 답변을 생성할 수 없습니다."
 
-        # Add assistant message to chat history
-        st.session_state.messages.append({"role": "assistant", "content": response})
+            # Add assistant message to chat history
+            st.session_state.messages.append({"role": "assistant", "content": response})
+        else:
+            st.error("Conversation chain is not initialized. Please check your OpenAI API key and model selection.")
 
 def get_conversation_chain(openai_api_key, model_name):
-    llm = ChatOpenAI(openai_api_key=openai_api_key, model_name=model_name, temperature=0)
-    conversation_chain = ConversationalRetrievalChain.from_llm(
-        llm=llm,
-        retriever=None,  # No retriever needed for this simple chatbot
-        memory=ConversationBufferMemory(memory_key='chat_history', return_messages=True, output_key='answer'),
-        get_chat_history=lambda h: h,
-        return_source_documents=False,  # Disable source documents
-        verbose=True
-    )
-    return conversation_chain
+    try:
+        llm = ChatOpenAI(openai_api_key=openai_api_key, model_name=model_name, temperature=0)
+        conversation_chain = ConversationalRetrievalChain.from_llm(
+            llm=llm,
+            retriever=None,  # No retriever needed for this simple chatbot
+            memory=ConversationBufferMemory(memory_key='chat_history', return_messages=True, output_key='answer'),
+            get_chat_history=lambda h: h,
+            return_source_documents=False,  # Disable source documents
+            verbose=True
+        )
+        return conversation_chain
+    except Exception as e:
+        logger.error(f"Error initializing conversation chain: {e}")
+        return None
 
 if __name__ == '__main__':
     main()
