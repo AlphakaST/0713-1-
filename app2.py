@@ -23,7 +23,7 @@ def main():
 
     with st.sidebar:
         openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
-        model_name = st.radio("Select your model", ['gpt-4', 'gpt-3.5-turbo'])
+        model_name = st.radio("Select your model", ['gpt-4', 'gpt-4o', 'gpt-3.5-turbo'])
         process = st.button("Process")
 
     if process:
@@ -64,7 +64,6 @@ def get_conversation_chain(openai_api_key, model_name):
     llm = ChatOpenAI(openai_api_key=openai_api_key, model_name=model_name, temperature=0)
     conversation_chain = ConversationalRetrievalChain.from_llm(
         llm=llm,
-        chain_type="stuff",
         retriever=None,  # No retriever needed for this simple chatbot
         memory=ConversationBufferMemory(memory_key='chat_history', return_messages=True, output_key='answer'),
         get_chat_history=lambda h: h,
